@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: Arial, sans-serif;
             background: #f0f2f5;
             height: 100vh;
         }
@@ -43,7 +43,6 @@
             font-size: 16px;
             cursor: pointer;
         }
-        #login button:hover { background: #0073e6; }
         
         /* Основной чат */
         #chat {
@@ -58,75 +57,40 @@
         
         /* Боковая панель */
         .sidebar {
-            width: 280px;
-            background: white;
-            border-right: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .sidebar-header {
-            padding: 20px;
-            background: #0084ff;
+            width: 250px;
+            background: #2c3e50;
             color: white;
-        }
-        
-        .sidebar-header h3 {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .online-count {
-            background: rgba(255,255,255,0.2);
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        
-        .users-list {
-            flex: 1;
+            padding: 20px;
             overflow-y: auto;
-            padding: 10px;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #34495e;
         }
         
         .user-item {
-            padding: 12px;
+            padding: 10px;
             margin: 5px 0;
-            background: #f8f9fa;
+            background: #34495e;
             border-radius: 5px;
             cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
         }
         
         .user-item:hover {
-            background: #e9ecef;
+            background: #3d566e;
         }
         
         .user-item.active {
-            background: #e3f2fd;
-            border-left: 3px solid #0084ff;
-        }
-        
-        .user-name {
-            font-weight: 500;
-        }
-        
-        .private-badge {
-            background: #0084ff;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
+            background: #3498db;
         }
         
         .logout-btn {
-            margin: 10px;
+            width: 100%;
             padding: 10px;
-            background: #dc3545;
+            margin-top: 20px;
+            background: #e74c3c;
             color: white;
             border: none;
             border-radius: 5px;
@@ -150,14 +114,9 @@
             align-items: center;
         }
         
-        .chat-header h2 {
-            color: #1a1a1a;
-            font-size: 18px;
-        }
-        
         .back-btn {
-            padding: 8px 15px;
-            background: #6c757d;
+            padding: 5px 15px;
+            background: #95a5a6;
             color: white;
             border: none;
             border-radius: 5px;
@@ -173,52 +132,32 @@
         
         .message {
             margin-bottom: 15px;
-            max-width: 70%;
             padding: 10px 15px;
-            border-radius: 15px;
-            position: relative;
-        }
-        
-        .message.global {
             background: white;
-            align-self: flex-start;
-        }
-        
-        .message.private {
-            background: #e3f2fd;
-            align-self: flex-start;
-            border-left: 3px solid #0084ff;
+            border-radius: 10px;
+            max-width: 70%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .message.system {
-            background: #f8f9fa;
+            background: #f1f2f6;
             text-align: center;
             max-width: 90%;
             margin: 10px auto;
             font-style: italic;
-            color: #666;
         }
         
         .message .sender {
             font-weight: bold;
-            color: #0084ff;
+            color: #3498db;
             margin-bottom: 5px;
         }
         
         .message .time {
             font-size: 11px;
-            color: #999;
+            color: #95a5a6;
             margin-top: 5px;
             text-align: right;
-        }
-        
-        .private-label {
-            font-size: 10px;
-            background: #0084ff;
-            color: white;
-            padding: 2px 5px;
-            border-radius: 3px;
-            margin-left: 5px;
         }
         
         .input-area {
@@ -239,20 +178,11 @@
         
         .input-area button {
             padding: 12px 25px;
-            background: #0084ff;
+            background: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-        }
-        
-        .input-area button:hover {
-            background: #0073e6;
-        }
-        
-        .input-area button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
         }
     </style>
 </head>
@@ -269,26 +199,19 @@
     <!-- Экран чата -->
     <div id="chat">
         <div class="container">
-            <!-- Боковая панель с пользователями -->
+            <!-- Боковая панель -->
             <div class="sidebar">
-                <div class="sidebar-header">
-                    <h3>
-                        📨 Почтовый голубь
-                        <span class="online-count" id="onlineCount">0</span>
-                    </h3>
-                </div>
-                <div class="users-list" id="usersList">
-                    <div class="user-item active" onclick="openGlobalChat()">
-                        <span class="user-name">🌍 Общий чат</span>
-                    </div>
+                <h3>Участники онлайн <span id="onlineCount">(0)</span></h3>
+                <div id="usersList">
+                    <div class="user-item active" onclick="openGlobal()">🌍 Общий чат</div>
                 </div>
                 <button class="logout-btn" onclick="logout()">Выйти</button>
             </div>
 
-            <!-- Область сообщений -->
+            <!-- Область чата -->
             <div class="chat-area">
                 <div class="chat-header">
-                    <h2 id="currentChatTitle">🌍 Общий чат</h2>
+                    <h2 id="currentChat">🌍 Общий чат</h2>
                     <button class="back-btn" id="backBtn" onclick="backToGlobal()">← Назад</button>
                 </div>
                 
@@ -296,21 +219,29 @@
                 
                 <div class="input-area">
                     <input type="text" id="messageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
-                    <button onclick="sendMessage()" id="sendBtn">Отправить</button>
+                    <button onclick="sendMessage()">Отправить</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const socket = io();
-        let currentUser = '';
-        let currentChat = 'global'; // 'global' или имя пользователя
-        let privateWith = '';
-        
         // Подключение к серверу
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true
+        });
+        
+        let currentUser = '';
+        let currentChat = 'global';
+        let privateWith = '';
+
         socket.on('connect', () => {
-            console.log('Подключено к серверу');
+            console.log('✅ Подключено к серверу');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.log('❌ Ошибка подключения:', error);
         });
 
         // Функция входа
@@ -328,38 +259,34 @@
             document.getElementById('chat').style.display = 'block';
         }
 
-        // Получение истории сообщений
+        // Получение истории
         socket.on('history', (messages) => {
+            console.log('История получена:', messages);
+            document.getElementById('messages').innerHTML = '';
             messages.forEach(msg => addMessage(msg));
         });
 
         // Обновление списка пользователей
         socket.on('update_users', (users) => {
+            console.log('Пользователи онлайн:', users);
             const usersList = document.getElementById('usersList');
             const onlineCount = document.getElementById('onlineCount');
             
-            // Оставляем "Общий чат"
-            usersList.innerHTML = '<div class="user-item active" onclick="openGlobalChat()"><span class="user-name">🌍 Общий чат</span></div>';
+            let html = '<div class="user-item active" onclick="openGlobal()">🌍 Общий чат</div>';
             
-            // Добавляем пользователей
             users.forEach(user => {
                 if (user !== currentUser) {
-                    const userDiv = document.createElement('div');
-                    userDiv.className = 'user-item';
-                    userDiv.setAttribute('onclick', `openPrivateChat('${user}')`);
-                    userDiv.innerHTML = `
-                        <span class="user-name">👤 ${user}</span>
-                        <span class="private-badge">ЛС</span>
-                    `;
-                    usersList.appendChild(userDiv);
+                    html += `<div class="user-item" onclick="openPrivate('${user}')">👤 ${user}</div>`;
                 }
             });
             
-            onlineCount.innerText = users.length;
+            usersList.innerHTML = html;
+            onlineCount.innerText = `(${users.length})`;
         });
 
         // Получение глобального сообщения
         socket.on('global_message', (msg) => {
+            console.log('Глобальное сообщение:', msg);
             if (currentChat === 'global') {
                 addMessage(msg);
             }
@@ -367,47 +294,46 @@
 
         // Получение личного сообщения
         socket.on('private_message', (msg) => {
-            // Если мы сейчас в чате с этим пользователем
+            console.log('Личное сообщение:', msg);
             if (currentChat === 'private' && (privateWith === msg.from || privateWith === msg.to)) {
                 addMessage(msg);
             } else {
-                // Показываем уведомление
+                // Уведомление
                 if (msg.from !== currentUser) {
-                    alert(`💌 Новое сообщение от ${msg.from}`);
+                    alert(`💌 Сообщение от ${msg.from}`);
                 }
             }
         });
 
-        // Получение истории личных сообщений
+        // Получение истории ЛС
         socket.on('private_history', (data) => {
+            console.log('История ЛС:', data);
             document.getElementById('messages').innerHTML = '';
             data.messages.forEach(msg => addMessage(msg));
         });
 
-        // Функция открытия общего чата
-        function openGlobalChat() {
+        function openGlobal() {
             currentChat = 'global';
             privateWith = '';
-            document.getElementById('currentChatTitle').innerHTML = '🌍 Общий чат';
+            document.getElementById('currentChat').innerHTML = '🌍 Общий чат';
             document.getElementById('backBtn').style.display = 'none';
             document.getElementById('messages').innerHTML = '';
             
-            // Делаем активным элемент
+            // Подсветка активного
             document.querySelectorAll('.user-item').forEach(item => {
                 item.classList.remove('active');
             });
             document.querySelector('.user-item').classList.add('active');
         }
 
-        // Функция открытия личного чата
-        function openPrivateChat(username) {
+        function openPrivate(username) {
             currentChat = 'private';
             privateWith = username;
-            document.getElementById('currentChatTitle').innerHTML = `💬 Чат с ${username}`;
+            document.getElementById('currentChat').innerHTML = `💬 Чат с ${username}`;
             document.getElementById('backBtn').style.display = 'block';
             document.getElementById('messages').innerHTML = '';
             
-            // Делаем активным нужный элемент
+            // Подсветка
             document.querySelectorAll('.user-item').forEach(item => {
                 item.classList.remove('active');
                 if (item.innerHTML.includes(username)) {
@@ -415,16 +341,13 @@
                 }
             });
             
-            // Запрашиваем историю
             socket.emit('get_private_history', { with: username });
         }
 
-        // Назад к общему чату
         function backToGlobal() {
-            openGlobalChat();
+            openGlobal();
         }
 
-        // Отправка сообщения
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
@@ -443,43 +366,38 @@
             input.value = '';
         }
 
-        // Добавление сообщения на страницу
         function addMessage(msg) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             
-            let messageClass = 'message';
-            let senderHtml = '';
-            
+            let className = 'message';
             if (msg.type === 'system') {
-                messageClass += ' system';
+                className += ' system';
                 messageDiv.innerHTML = `📢 ${msg.text}`;
             } else {
                 if (msg.type === 'private') {
-                    messageClass += ' private';
-                    senderHtml = `<div class="sender">${msg.from} 💌</div>`;
+                    messageDiv.innerHTML = `
+                        <div class="sender">${msg.from} 💌</div>
+                        <div>${msg.text}</div>
+                        <div class="time">${msg.time}</div>
+                    `;
                 } else {
-                    messageClass += ' global';
-                    senderHtml = `<div class="sender">${msg.from}</div>`;
+                    messageDiv.innerHTML = `
+                        <div class="sender">${msg.from}</div>
+                        <div>${msg.text}</div>
+                        <div class="time">${msg.time}</div>
+                    `;
                 }
-                
-                messageDiv.innerHTML = `
-                    ${senderHtml}
-                    <div>${msg.text}</div>
-                    <div class="time">${msg.time}</div>
-                `;
             }
             
-            messageDiv.className = messageClass;
+            messageDiv.className = className;
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Выход из чата
         function logout() {
             location.reload();
         }
     </script>
 </body>
-
 </html>
