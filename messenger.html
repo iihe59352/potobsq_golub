@@ -3,62 +3,71 @@
 <head>
     <title>Почтовый голубь</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { font-family: Arial; margin: 0; padding: 20px; }
-        #login { max-width: 300px; margin: 50px auto; }
-        #chat { display: none; }
-        #messages { height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-        .msg { margin: 5px 0; padding: 5px; background: #f1f1f1; }
-        .system { background: #e3f2fd; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        #login, #chat { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        #chat { display: none; height: 80vh; flex-direction: column; }
+        #messages { flex-grow: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 15px; border-radius: 8px; }
+        .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 18px; background: #e1f5fe; align-self: flex-start; max-width: 80%; word-wrap: break-word; }
+        .msg b { color: #0288d1; display: block; font-size: 0.8em; }
+        .msg small { color: #888; font-size: 0.7em; display: block; text-align: right; }
+        input { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        button { width: 100%; padding: 10px; background: #0288d1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0277bd; }
     </style>
 </head>
 <body>
     <div id="login">
-        <h2>Вход в чат</h2>
-        <input type="text" id="username" placeholder="Ваше имя">
-        <button onclick="login()">Войти</button>
+        <h2 style="text-align: center; color: #0288d1;">🐦 Почтовый голубь</h2>
+        <input type="text" id="username" placeholder="Ваше имя голубятника">
+        <button onclick="login()">Влететь в чат</button>
     </div>
 
     <div id="chat">
         <div id="messages"></div>
-        <input type="text" id="msg" style="width: 80%; padding: 10px;" placeholder="Сообщение">
-        <button onclick="sendMsg()">Отправить</button>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="msg" placeholder="Напишите письмо..." style="margin-bottom: 0;">
+            <button onclick="sendMsg()" style="width: auto;">Отправить</button>
+        </div>
     </div>
 
     <script>
-        const socket = io();
+        // ВАЖНО: Вставь сюда свою ссылку от Render!
+        const SERVER_URL = "https://potobsq-golub.onrender.com"; 
+        const socket = io(SERVER_URL);
+        
         let name = '';
-
-        socket.on('connect', () => console.log('✅ Connected'));
 
         function login() {
             name = document.getElementById('username').value;
             if (name) {
                 socket.emit('login', { name: name });
                 document.getElementById('login').style.display = 'none';
-                document.getElementById('chat').style.display = 'block';
+                document.getElementById('chat').style.display = 'flex';
             }
         }
 
         function sendMsg() {
-            const msg = document.getElementById('msg').value;
-            if (msg) {
-                socket.emit('global', { text: msg });
-                document.getElementById('msg').value = '';
+            const input = document.getElementById('msg');
+            if (input.value) {
+                socket.emit('global', { text: input.value });
+                input.value = '';
             }
         }
 
         socket.on('global_message', (data) => {
+            const container = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'msg';
-            div.innerHTML = `<b>${data.from}:</b> ${data.text} <small>${data.time}</small>`;
-            document.getElementById('messages').appendChild(div);
+            div.innerHTML = `<b>${data.from}</b>${data.text}<small>${data.time}</small>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight; // Авто-скролл вниз
         });
 
-        socket.on('update_users', (users) => {
-            console.log('Online:', users);
-        });
+        // Отправка по Enter
+        document.getElementById('msg').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
     </script>
 </body>
 </html>
