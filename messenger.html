@@ -6,69 +6,244 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        #login, #chat { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        #chat { display: none; height: 80vh; flex-direction: column; }
-        #messages { flex-grow: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 15px; border-radius: 8px; }
-        .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 18px; background: #e1f5fe; align-self: flex-start; max-width: 80%; word-wrap: break-word; }
-        .msg b { color: #0288d1; display: block; font-size: 0.8em; }
-        .msg small { color: #888; font-size: 0.7em; display: block; text-align: right; }
-        input { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
-        button { width: 100%; padding: 10px; background: #0288d1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0277bd; }
+        body { font-family: sans-serif; margin: 0; background: #e0e5ec; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        /* Экран входа */
+        #auth-screen { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+        input, select { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 10px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #357abd; }
+        .toggle-btn { background: none; color: #4a90e2; text-decoration: underline; cursor: pointer; border: none; font-size: 0.9em; }
+
+        /* Экран чата */
+        #chat-app { display: none; width: 900px; height: 80vh; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; display: none; }
+        
+        /* Боковая панель */
+        #sidebar { width: 250px; background: #f5f7fa; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #my-profile { padding: 15px; background: #4a90e2; color: white; display: flex; align-items: center; gap: 10px; }
+        #search-box { padding: 10px; border-bottom: 1px solid #ddd; }
+        #contact-list { flex-grow: 1; overflow-y: auto; }
+        .contact { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .contact:hover, .contact.active { background: #e6ebf1; }
+        .contact-avatar { font-size: 1.5em; }
+
+        /* Область переписки */
+        #main-chat { flex-grow: 1; display: flex; flex-direction: column; background: #fff; }
+        #chat-header { padding: 15px; border-bottom: 1px solid #eee; font-weight: bold; background: #fff; }
+        #messages { flex-grow: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
+        #input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        
+        /* Сообщения */
+        .msg { margin-bottom: 10px; max-width: 70%; padding: 8px 15px; border-radius: 15px; position: relative; word-wrap: break-word; }
+        .msg.mine { background: #dcf8c6; align-self: flex-end; margin-left: auto; }
+        .msg.others { background: #fff; border: 1px solid #eee; align-self: flex-start; }
+        .msg small { display: block; font-size: 0.7em; color: #888; margin-top: 5px; text-align: right; }
+        .msg b { color: #4a90e2; font-size: 0.8em; display: block; }
     </style>
 </head>
 <body>
-    <div id="login">
-        <h2 style="text-align: center; color: #0288d1;">🐦 Почтовый голубь</h2>
-        <input type="text" id="username" placeholder="Ваше имя голубятника">
-        <button onclick="login()">Влететь в чат</button>
+
+    <div id="auth-screen">
+        <h2 id="form-title">Вход</h2>
+        <div id="avatar-select" style="display:none;">
+            <label>Выбери эмодзи:</label>
+            <select id="reg-avatar">
+                <option>🐦</option><option>🐼</option><option>🦊</option><option>🐸</option>
+                <option>🦄</option><option>👽</option><option>🤖</option><option>👻</option>
+            </select>
+        </div>
+        <input type="text" id="username" placeholder="Логин">
+        <input type="password" id="password" placeholder="Пароль">
+        <button id="auth-btn" onclick="doLogin()">Войти</button>
+        <button class="toggle-btn" onclick="toggleAuth()">Нет аккаунта? Регистрация</button>
+        <p id="error-msg" style="color:red; font-size:0.8em;"></p>
     </div>
 
-    <div id="chat">
-        <div id="messages"></div>
-        <div style="display: flex; gap: 5px;">
-            <input type="text" id="msg" placeholder="Напишите письмо..." style="margin-bottom: 0;">
-            <button onclick="sendMsg()" style="width: auto;">Отправить</button>
+    <div id="chat-app" style="display: none;"> <div id="sidebar">
+            <div id="my-profile">
+                <span id="my-avatar" style="font-size: 1.5em;"></span>
+                <span id="my-name" style="font-weight: bold;"></span>
+                <button onclick="logout()" style="width: auto; padding: 2px 5px; margin-left: auto; font-size: 0.7em; background: rgba(0,0,0,0.2);">Выход</button>
+            </div>
+            <div id="search-box">
+                <input type="text" id="search-input" placeholder="Поиск людей..." oninput="searchUsers()">
+            </div>
+            <div id="contact-list">
+                <div class="contact active" onclick="openChat('global', 'Глобальный чат')">
+                    <span class="contact-avatar">🌍</span>
+                    <span>Глобальный чат</span>
+                </div>
+                <div id="search-results"></div>
+            </div>
+        </div>
+        
+        <div id="main-chat">
+            <div id="chat-header">Глобальный чат</div>
+            <div id="messages"></div>
+            <div id="input-area">
+                <input type="text" id="msg-input" placeholder="Напишите сообщение...">
+                <button onclick="sendMessage()" style="width: 100px;">Send</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // ВАЖНО: Вставь сюда свою ссылку от Render!
-        const SERVER_URL = "https://potobsq-golub-1.onrender.com"; 
+        // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ С RENDER
+        const SERVER_URL = "https://potobsq-golub.onrender.com"; 
         const socket = io(SERVER_URL);
-        
-        let name = '';
 
-        function login() {
-            name = document.getElementById('username').value;
-            if (name) {
-                socket.emit('login', { name: name });
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('chat').style.display = 'flex';
+        let currentUser = null;
+        let currentChat = 'global';
+        let isRegistering = false;
+
+        // --- АВТОРИЗАЦИЯ ---
+        
+        // Проверка сохраненного входа при загрузке
+        window.onload = function() {
+            const savedUser = localStorage.getItem('pigeon_user');
+            const savedPass = localStorage.getItem('pigeon_pass');
+            if(savedUser && savedPass) {
+                document.getElementById('username').value = savedUser;
+                document.getElementById('password').value = savedPass;
+                doLogin();
+            }
+        };
+
+        function toggleAuth() {
+            isRegistering = !isRegistering;
+            document.getElementById('form-title').innerText = isRegistering ? 'Регистрация' : 'Вход';
+            document.getElementById('auth-btn').innerText = isRegistering ? 'Создать' : 'Войти';
+            document.getElementById('avatar-select').style.display = isRegistering ? 'block' : 'none';
+            document.querySelector('.toggle-btn').innerText = isRegistering ? 'Уже есть аккаунт? Вход' : 'Нет аккаунта? Регистрация';
+        }
+
+        function doLogin() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const avatar = document.getElementById('reg-avatar').value;
+
+            if (!user || !pass) return;
+
+            if (isRegistering) {
+                socket.emit('register', { username: user, password: pass, avatar: avatar });
+            } else {
+                socket.emit('login', { username: user, password: pass });
             }
         }
 
-        function sendMsg() {
-            const input = document.getElementById('msg');
-            if (input.value) {
-                socket.emit('global', { text: input.value });
+        socket.on('auth_response', (data) => {
+            if (data.success) {
+                currentUser = data.username;
+                localStorage.setItem('pigeon_user', document.getElementById('username').value);
+                localStorage.setItem('pigeon_pass', document.getElementById('password').value);
+                
+                // Переключаем интерфейс
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('chat-app').style.display = 'flex';
+                
+                // Заполняем профиль
+                document.getElementById('my-name').innerText = currentUser;
+                document.getElementById('my-avatar').innerText = data.avatar;
+                
+                // Загружаем глобальный чат
+                socket.emit('join_dm', { username: currentUser });
+                loadHistory('global');
+            } else {
+                document.getElementById('error-msg').innerText = data.message;
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('pigeon_user');
+            localStorage.removeItem('pigeon_pass');
+            location.reload();
+        }
+
+        // --- ЧАТ ---
+
+        function openChat(chatId, chatName) {
+            currentChat = chatId;
+            document.getElementById('chat-header').innerText = chatName;
+            document.getElementById('messages').innerHTML = ''; // Очистка
+            
+            // Визуальное выделение (можно доработать)
+            document.querySelectorAll('.contact').forEach(el => el.classList.remove('active'));
+            
+            loadHistory(chatId);
+        }
+
+        function loadHistory(chatId) {
+            socket.emit('get_history', { chat_with: chatId, user: currentUser });
+        }
+
+        socket.on('history_data', (data) => {
+            if (data.chat !== currentChat) return; // Чтобы не смешивать чаты
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            data.messages.forEach(msg => addMessageToUI(msg));
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const text = input.value;
+            if (text) {
+                socket.emit('send_message', { 
+                    sender: currentUser, 
+                    receiver: currentChat, 
+                    text: text 
+                });
                 input.value = '';
             }
         }
 
-        socket.on('global_message', (data) => {
-            const container = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = 'msg';
-            div.innerHTML = `<b>${data.from}</b>${data.text}<small>${data.time}</small>`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight; // Авто-скролл вниз
+        socket.on('new_message', (data) => {
+            // Показываем сообщение только если мы в нужном чате
+            // Или если это глобальный чат и мы в нем
+            if (currentChat === 'global' && data.receiver === 'global') {
+                addMessageToUI(data);
+            } else if (currentChat !== 'global' && (data.from === currentChat || data.receiver === currentChat)) {
+                // Это ЛС: либо от того, с кем болтаем, либо наше ему
+                addMessageToUI(data);
+            }
         });
 
-        // Отправка по Enter
-        document.getElementById('msg').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
+        function addMessageToUI(data) {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            const isMine = data.from === currentUser;
+            
+            div.className = `msg ${isMine ? 'mine' : 'others'}`;
+            div.innerHTML = `<b>${data.from}</b>${data.text}<small>${data.time}</small>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- ПОИСК ---
+
+        function searchUsers() {
+            const query = document.getElementById('search-input').value;
+            if (query.length > 0) {
+                socket.emit('search_user', { query: query });
+            } else {
+                document.getElementById('search-results').innerHTML = '';
+            }
+        }
+
+        socket.on('search_results', (users) => {
+            const container = document.getElementById('search-results');
+            container.innerHTML = '';
+            users.forEach(u => {
+                if (u.username === currentUser) return; // Не искать себя
+                const div = document.createElement('div');
+                div.className = 'contact';
+                div.innerHTML = `<span class="contact-avatar">${u.avatar}</span><span>${u.username}</span>`;
+                div.onclick = () => openChat(u.username, u.username);
+                container.appendChild(div);
+            });
+        });
+
+        // Enter для отправки
+        document.getElementById('msg-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
     </script>
 </body>
 </html>
-
